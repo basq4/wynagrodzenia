@@ -275,10 +275,33 @@
                         Koszty uzyskania przychodu (KUP)
                     </label>
                     <select id="kupType">
-                        <option value="0">Brak — 0 zł/mies.</option>
-                        <option value="250" selected>Standardowe — 250 zł/mies.</option>
+                        <option value="0" selected>Brak — 0 zł/mies.</option>
+                        <option value="250">Standardowe — 250 zł/mies.</option>
                         <option value="300">Podwyższone (dojazd) — 300 zł/mies.</option>
                     </select>
+                </div>
+            </div>
+
+            <div class="grid-params" style="margin-top: 0.5rem;">
+                <div>
+                    <label class="switch-label">
+                        <input type="checkbox" id="kupAutorskie" role="switch">
+                        Koszty autorskie 50% (praca twórcza)
+                    </label>
+                </div>
+                <div></div>
+            </div>
+
+            <div id="kupAutorskieOptions" style="display: none; margin-top: 0;">
+                <div class="grid-params">
+                    <div>
+                        <label for="autorskiePercent">
+                            Udział pracy twórczej: <strong id="autorskiePercentValue">80</strong>%
+                        </label>
+                        <input type="range" id="autorskiePercent" min="5" max="100" value="80" step="5">
+                        <small>50% od tej części przychodu stanowi koszty autorskie. Limit roczny: 120 000 zł. Do pozostałej części stosowane są KUP standardowe/podwyższone.</small>
+                    </div>
+                    <div></div>
                 </div>
             </div>
 
@@ -477,8 +500,8 @@
 
     <footer>
         <div class="container">
-            <p>Kalkulator ma charakter informacyjny. Rzeczywiste wynagrodzenie może się różnić w zależności od indywidualnej sytuacji podatkowej.<br>
-            Obliczenia oparte o przepisy obowiązujące w 2026 r.</p>
+            <p>Kalkulator ma charakter informacyjny i jest prywatnym projektem na własne potrzeby. Autor nie ponosi odpowiedzialności za zgodność wyników z aktualnymi przepisami prawa w zakresie wynagrodzeń.<br>
+            Rzeczywiste wynagrodzenie może się różnić w zależności od indywidualnej sytuacji podatkowej. Obliczenia oparte o przepisy obowiązujące w 2026 r.</p>
         </div>
     </footer>
 
@@ -498,6 +521,16 @@
     // Toggle PPK options visibility
     document.getElementById('ppkEnabled').addEventListener('change', function () {
         document.getElementById('ppkOptions').style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Toggle koszty autorskie options visibility
+    document.getElementById('kupAutorskie').addEventListener('change', function () {
+        document.getElementById('kupAutorskieOptions').style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Update autorskie percent display
+    document.getElementById('autorskiePercent').addEventListener('input', function () {
+        document.getElementById('autorskiePercentValue').textContent = this.value;
     });
 
     // Track whether user explicitly clicked calculate (for scroll)
@@ -555,7 +588,10 @@
         const zusLimit = getVal('zusLimit');
         const under26Limit = getVal('under26Limit');
 
-        const kup = parseFloat(document.getElementById('kupType').value);
+        const kupFlat = parseFloat(document.getElementById('kupType').value);
+        const kupAutorskieEnabled = document.getElementById('kupAutorskie').checked;
+        const autorskiePercent = kupAutorskieEnabled ? parseFloat(document.getElementById('autorskiePercent').value) / 100 : 0;
+        const kupAutorskieLimit = 120000; // roczny limit kosztów autorskich
         const ppkEnabled = document.getElementById('ppkEnabled').checked;
         const isUnder26 = document.getElementById('under26').checked;
         const hasPIT2 = document.getElementById('pit2').checked;
@@ -568,6 +604,7 @@
         let cumulativeTaxBase = 0;
         let cumulativeTaxPaid = 0;
         let cumulativeUnder26Income = 0;
+        let cumulativeKupAutorskie = 0;
 
         const rows = [];
 
@@ -602,6 +639,26 @@
 
             // PPK employer contribution is taxable income (PIT) but not subject to ZUS/health
             const ppkEmployer = ppkEnabled ? Math.round(monthGross * ppkEmployerRate * 100) / 100 : 0;
+
+            // KUP calculation
+            let kup;
+            let kupAutorskieMiesieczne = 0;
+            if (kupAutorskieEnabled) {
+                // Przychód po ZUS (podstawa do kosztów autorskich)
+                const przychod = monthGross - totalZUS;
+                // Część twórcza przychodu
+                const authorIncome = przychod * autorskiePercent;
+                // Koszty autorskie = 50% od części twórczej
+                let autorskieRaw = Math.round(authorIncome * 0.5 * 100) / 100;
+                // Sprawdź limit roczny 120 000 zł
+                const remainingLimit = Math.max(0, kupAutorskieLimit - cumulativeKupAutorskie);
+                kupAutorskieMiesieczne = Math.min(autorskieRaw, remainingLimit);
+                cumulativeKupAutorskie += kupAutorskieMiesieczne;
+                // KUP standardowe/podwyższone dla części nietwórczej
+                kup = kupAutorskieMiesieczne + kupFlat;
+            } else {
+                kup = kupFlat;
+            }
 
             // Tax calculation — PPK employer adds to tax base
             const incomeForTax = monthGross + ppkEmployer; // przychód podatkowy
@@ -680,7 +737,7 @@
 
         // Totals
         const totals = rows.reduce((acc, r) => {
-            for (const key of ['gross', 'emerytalna', 'rentowa', 'chorobowa', 'totalZUS', 'zdrowotna', 'tax', 'ppkEmployee', 'net']) {
+            for (const key of ['gross', 'emerytalna', 'rentowa', 'chorobowa', 'totalZUS', 'zdrowotna', 'kup', 'tax', 'ppkEmployee', 'net']) {
                 acc[key] = (acc[key] || 0) + r[key];
             }
             return acc;
@@ -745,7 +802,7 @@
                 <td>${fmt(totals.totalZUS)}</td>
                 <td>—</td>
                 <td>${fmt(totals.zdrowotna)}</td>
-                <td>—</td>
+                <td>${fmt(totals.kup)}</td>
                 <td>—</td>
                 <td>${fmt(totals.tax)}</td>
                 <td>${fmt(totals.ppkEmployee)}</td>
