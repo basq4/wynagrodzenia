@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  wynagrodzenia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kalkulator-wynagrodzen
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    labels:
+      - "description=Kalkulator Wynagrodzenia Netto 2026"
