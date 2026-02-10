@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Wynagrodzenia Netto 2026</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        :root {
+            --pico-font-size: 16px;
+        }
+
+        header.hero {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        header.hero h1 {
+            color: white;
+            margin-bottom: 0.25rem;
+            font-size: 1.8rem;
+        }
+
+        header.hero p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0;
+        }
+
+        .grid-params {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-params {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--pico-card-background-color);
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: var(--pico-border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--pico-primary);
+            font-size: 1.1rem;
+        }
+
+        .result-highlight {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 100%);
+            color: white;
+            border-radius: var(--pico-border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .result-highlight .stat h4 {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+            font-weight: 400;
+        }
+
+        .result-highlight .stat .value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            font-size: 0.85rem;
+        }
+
+        table th {
+            white-space: nowrap;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.4rem;
+        }
+
+        table td {
+            padding: 0.5rem 0.4rem;
+            white-space: nowrap;
+        }
+
+        tr.row-summary {
+            font-weight: 700;
+            background: var(--pico-primary-focus);
+        }
+
+        .info-badge {
+            display: inline-block;
+            background: var(--pico-primary-focus);
+            color: var(--pico-primary);
+            padding: 0.1rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.25rem;
+            cursor: help;
+        }
+
+        .switch-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .switch-label input[type="checkbox"] {
+            margin-bottom: 0;
+        }
+
+        fieldset {
+            margin-bottom: 0;
+        }
+
+        details.rates-details {
+            margin-top: 1rem;
+        }
+
+        details.rates-details summary {
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: var(--pico-primary);
+        }
+
+        .rates-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .rates-grid label {
+            font-size: 0.85rem;
+            margin-bottom: 0;
+        }
+
+        .rates-grid input {
+            padding: 0.3rem 0.5rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            color: var(--pico-muted-color);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--pico-muted-border-color);
+            margin-top: 2rem;
+        }
+
+        .tooltip-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--pico-muted-border-color);
+            color: var(--pico-muted-color);
+            font-size: 0.65rem;
+            font-weight: 700;
+            cursor: help;
+            margin-left: 0.25rem;
+            vertical-align: middle;
+        }
+
+        .month-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 120px;
+            margin: 1rem 0;
+            padding: 0 0.5rem;
+        }
+
+        .month-chart .bar-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .month-chart .bar {
+            width: 100%;
+            max-width: 50px;
+            background: linear-gradient(180deg, #2d6a9f, #1e3a5f);
+            border-radius: 3px 3px 0 0;
+            min-height: 2px;
+            transition: height 0.3s ease;
+        }
+
+        .month-chart .bar-label {
+            font-size: 0.65rem;
+            color: var(--pico-muted-color);
+            margin-top: 4px;
+        }
+
+        .month-chart .bar-value {
+            font-size: 0.6rem;
+            color: var(--pico-muted-color);
+            margin-bottom: 2px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        #results {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="hero">
+        <div class="container">
+            <h1>💰 Kalkulator Wynagrodzenia Netto</h1>
+            <p>Umowa o pracę — rozliczenie miesięczne na rok 2026</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Input Section -->
+        <div class="card">
+            <h3>📋 Parametry wynagrodzenia</h3>
+            <div class="grid-params">
+                <div>
+                    <label for="grossSalary">
+                        Wynagrodzenie brutto (miesięczne)
+                    </label>
+                    <input type="number" id="grossSalary" value="10000" min="0" step="100" placeholder="np. 10000" aria-label="Wynagrodzenie brutto">
+                    <small>Stała kwota brutto w skali miesiąca</small>
+                </div>
+                <div>
+                    <label for="kupType">
+                        Koszty uzyskania przychodu (KUP)
+                    </label>
+                    <select id="kupType">
+                        <option value="0">Brak — 0 zł/mies.</option>
+                        <option value="250" selected>Standardowe — 250 zł/mies.</option>
+                        <option value="300">Podwyższone (dojazd) — 300 zł/mies.</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-params" style="margin-top: 0.5rem;">
+                <div>
+                    <label class="switch-label">
+                        <input type="checkbox" id="pit2" role="switch" checked>
+                        PIT-2 (kwota zmniejszająca podatek 300 zł/mies.)
+                    </label>
+                </div>
+                <div>
+                    <label class="switch-label">
+                        <input type="checkbox" id="under26" role="switch">
+                        Ulga dla młodych (do 26 roku życia)
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid-params" style="margin-top: 0.5rem;">
+                <div>
+                    <label class="switch-label">
+                        <input type="checkbox" id="ppkEnabled" role="switch">
+                        PPK (Pracownicze Plany Kapitałowe)
+                    </label>
+                </div>
+                <div></div>
+            </div>
+
+            <div id="ppkOptions" style="display: none; margin-top: 0.75rem;">
+                <div class="grid-params">
+                    <div>
+                        <label for="ppkEmployee">Składka pracownika (%)</label>
+                        <select id="ppkEmployee">
+                            <option value="0.5">0,5% (obniżona)</option>
+                            <option value="1">1%</option>
+                            <option value="1.5">1,5%</option>
+                            <option value="2" selected>2% (podstawowa)</option>
+                            <option value="2.5">2,5%</option>
+                            <option value="3">3%</option>
+                            <option value="3.5">3,5%</option>
+                            <option value="4">4% (maksymalna)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="ppkEmployer">Składka pracodawcy (%)</label>
+                        <select id="ppkEmployer">
+                            <option value="1.5" selected>1,5% (podstawowa)</option>
+                            <option value="2">2%</option>
+                            <option value="2.5">2,5%</option>
+                            <option value="3">3%</option>
+                            <option value="3.5">3,5%</option>
+                            <option value="4">4% (maksymalna)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <details class="bonus-details" style="margin-top: 1rem;">
+                <summary>🎁 Premie / dodatki miesięczne</summary>
+                <small style="display:block; margin: 0.5rem 0 0.75rem;">Wpisz kwotę brutto premii w miesiącach, w których ją otrzymujesz. Puste pole = brak premii.</small>
+                <div class="rates-grid" id="bonusGrid"></div>
+            </details>
+
+            <details class="rates-details">
+                <summary>⚙️ Zaawansowane — stawki i limity</summary>
+                <div class="rates-grid">
+                    <div>
+                        <label>Składka emerytalna (%)</label>
+                        <input type="number" id="rateEmerytalna" value="9.76" step="0.01">
+                    </div>
+                    <div>
+                        <label>Składka rentowa (%)</label>
+                        <input type="number" id="rateRentowa" value="1.5" step="0.01">
+                    </div>
+                    <div>
+                        <label>Składka chorobowa (%)</label>
+                        <input type="number" id="rateChorobowa" value="2.45" step="0.01">
+                    </div>
+                    <div>
+                        <label>Składka zdrowotna (%)</label>
+                        <input type="number" id="rateZdrowotna" value="9" step="0.01">
+                    </div>
+                    <div>
+                        <label>PIT stawka I (%)</label>
+                        <input type="number" id="ratePIT1" value="12" step="0.01">
+                    </div>
+                    <div>
+                        <label>PIT stawka II (%)</label>
+                        <input type="number" id="ratePIT2" value="32" step="0.01">
+                    </div>
+                    <div>
+                        <label>Próg podatkowy (roczny)</label>
+                        <input type="number" id="taxThreshold" value="120000" step="1000">
+                    </div>
+                    <div>
+                        <label>Kwota wolna (roczna)</label>
+                        <input type="number" id="taxFreeAmount" value="30000" step="1000">
+                    </div>
+                    <div>
+                        <label>Limit ZUS 30-krotność</label>
+                        <input type="number" id="zusLimit" value="282600" step="100">
+                    </div>
+                    <div>
+                        <label>Limit ulgi &lt;26 (roczny)</label>
+                        <input type="number" id="under26Limit" value="85528" step="100">
+                    </div>
+                </div>
+            </details>
+
+            <button id="calculateBtn" style="margin-top: 1rem; width: 100%;" onclick="shouldScroll = true; calculate()">
+                Oblicz wynagrodzenie netto
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results">
+            <!-- Summary -->
+            <div class="result-highlight" id="summaryBox">
+                <div class="stat">
+                    <h4>Brutto roczne</h4>
+                    <div class="value" id="sumGross">—</div>
+                </div>
+                <div class="stat">
+                    <h4>Netto roczne</h4>
+                    <div class="value" id="sumNet">—</div>
+                </div>
+                <div class="stat">
+                    <h4>Średnie netto/mies.</h4>
+                    <div class="value" id="avgNet">—</div>
+                </div>
+                <div class="stat">
+                    <h4>Efektywna stawka</h4>
+                    <div class="value" id="effectiveRate">—</div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="card">
+                <h3>📊 Wynagrodzenie netto — wykres miesięczny</h3>
+                <div class="month-chart" id="monthChart"></div>
+            </div>
+
+            <!-- Detailed Table -->
+            <div class="card">
+                <h3>📅 Szczegółowe rozliczenie miesięczne</h3>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div> ZUS</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#e67e22"></div> Zdrowotna</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#f1c40f"></div> Podatek</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div> PPK</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div> Netto</div>
+                </div>
+                <div class="table-wrapper">
+                    <table role="grid" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Miesiąc</th>
+                                <th>Brutto</th>
+                                <th>w tym premia</th>
+                                <th>Emeryt.</th>
+                                <th>Rent.</th>
+                                <th>Chorob.</th>
+                                <th>Σ ZUS</th>
+                                <th>Podst. zdr.</th>
+                                <th>Zdrowotna</th>
+                                <th>KUP</th>
+                                <th>Podst. opod.</th>
+                                <th>Zaliczka PIT</th>
+                                <th>PPK prac.</th>
+                                <th>Netto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cost breakdown -->
+            <div class="card">
+                <h3>💼 Całkowity koszt pracodawcy (roczny)</h3>
+                <div class="table-wrapper">
+                    <table role="grid" id="employerTable">
+                        <thead>
+                            <tr>
+                                <th>Składnik</th>
+                                <th>Stawka</th>
+                                <th>Kwota roczna</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employerBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Kalkulator ma charakter informacyjny. Rzeczywiste wynagrodzenie może się różnić w zależności od indywidualnej sytuacji podatkowej.<br>
+            Obliczenia oparte o przepisy obowiązujące w 2026 r.</p>
+        </div>
+    </footer>
+
+    <script>
+    const MONTHS = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+                    'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+    const MONTHS_SHORT = ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'];
+
+    // Generate bonus input fields
+    const bonusGrid = document.getElementById('bonusGrid');
+    MONTHS.forEach((month, i) => {
+        const div = document.createElement('div');
+        div.innerHTML = `<label>${month}</label><input type="number" id="bonus${i}" value="" min="0" step="100" placeholder="0">`;
+        bonusGrid.appendChild(div);
+    });
+
+    // Toggle PPK options visibility
+    document.getElementById('ppkEnabled').addEventListener('change', function () {
+        document.getElementById('ppkOptions').style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Track whether user explicitly clicked calculate (for scroll)
+    let shouldScroll = false;
+
+    // Auto-recalculate on any input change (no scroll)
+    function attachAutoRecalc() {
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('change', () => {
+                if (document.getElementById('results').style.display !== 'none') {
+                    shouldScroll = false;
+                    calculate();
+                }
+            });
+            if (el.type === 'number') {
+                el.addEventListener('input', () => {
+                    if (document.getElementById('results').style.display !== 'none') {
+                        shouldScroll = false;
+                        calculate();
+                    }
+                });
+            }
+        });
+    }
+    attachAutoRecalc();
+
+    // Enter key triggers calculation with scroll
+    document.getElementById('grossSalary').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { shouldScroll = true; calculate(); }
+    });
+
+    function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+    function fmt(n) { return n.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmtInt(n) { return n.toLocaleString('pl-PL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+
+    function calculate() {
+        const gross = getVal('grossSalary');
+        if (gross <= 0) return;
+
+        // Bonuses per month
+        const bonuses = [];
+        for (let i = 0; i < 12; i++) {
+            bonuses.push(getVal('bonus' + i));
+        }
+
+        // Rates
+        const rEmerytalna = getVal('rateEmerytalna') / 100;
+        const rRentowa = getVal('rateRentowa') / 100;
+        const rChorobowa = getVal('rateChorobowa') / 100;
+        const rZdrowotna = getVal('rateZdrowotna') / 100;
+        const rPIT1 = getVal('ratePIT1') / 100;
+        const rPIT2 = getVal('ratePIT2') / 100;
+        const taxThreshold = getVal('taxThreshold');
+        const taxFreeAmount = getVal('taxFreeAmount');
+        const zusLimit = getVal('zusLimit');
+        const under26Limit = getVal('under26Limit');
+
+        const kup = parseFloat(document.getElementById('kupType').value);
+        const ppkEnabled = document.getElementById('ppkEnabled').checked;
+        const isUnder26 = document.getElementById('under26').checked;
+        const hasPIT2 = document.getElementById('pit2').checked;
+        const ppkEmployeeRate = ppkEnabled ? parseFloat(document.getElementById('ppkEmployee').value) / 100 : 0;
+        const ppkEmployerRate = ppkEnabled ? parseFloat(document.getElementById('ppkEmployer').value) / 100 : 0;
+
+        const monthlyTaxReduction = hasPIT2 ? Math.round(taxFreeAmount * rPIT1 / 12 * 100) / 100 : 0; // 300 zł if PIT-2 filed
+
+        let cumulativeGross = 0;
+        let cumulativeTaxBase = 0;
+        let cumulativeTaxPaid = 0;
+        let cumulativeUnder26Income = 0;
+
+        const rows = [];
+
+        for (let m = 0; m < 12; m++) {
+            const monthGross = gross + bonuses[m]; // base + bonus
+            const prevCumulativeGross = cumulativeGross;
+            cumulativeGross += monthGross;
+
+            // ZUS - check 30x limit (applies to emerytalna + rentowa only)
+            let emerytalna, rentowa, chorobowa;
+
+            if (prevCumulativeGross >= zusLimit) {
+                // Already exceeded — no emerytalna/rentowa
+                emerytalna = 0;
+                rentowa = 0;
+            } else if (cumulativeGross > zusLimit) {
+                // Exceeds this month — partial
+                const base = zusLimit - prevCumulativeGross;
+                emerytalna = Math.round(base * rEmerytalna * 100) / 100;
+                rentowa = Math.round(base * rRentowa * 100) / 100;
+            } else {
+                emerytalna = Math.round(monthGross * rEmerytalna * 100) / 100;
+                rentowa = Math.round(monthGross * rRentowa * 100) / 100;
+            }
+
+            chorobowa = Math.round(monthGross * rChorobowa * 100) / 100; // no limit
+            const totalZUS = emerytalna + rentowa + chorobowa;
+
+            // Health insurance
+            const healthBase = monthGross - totalZUS;
+            const zdrowotna = Math.round(healthBase * rZdrowotna * 100) / 100;
+
+            // PPK employer contribution is taxable income (PIT) but not subject to ZUS/health
+            const ppkEmployer = ppkEnabled ? Math.round(monthGross * ppkEmployerRate * 100) / 100 : 0;
+
+            // Tax calculation — PPK employer adds to tax base
+            const incomeForTax = monthGross + ppkEmployer; // przychód podatkowy
+            let taxBaseCurrent = Math.floor(incomeForTax - totalZUS - kup);
+            if (taxBaseCurrent < 0) taxBaseCurrent = 0;
+
+            // Under 26 exemption — limit tracked on gross revenue (przychód brutto)
+            let taxExemptBase = 0;
+            if (isUnder26) {
+                const prevCumulativeUnder26 = cumulativeUnder26Income;
+                cumulativeUnder26Income += monthGross;
+                if (prevCumulativeUnder26 < under26Limit) {
+                    // Full or partial exemption
+                    const exemptGross = Math.min(monthGross, under26Limit - prevCumulativeUnder26);
+                    // Exempt portion of tax base (proportional)
+                    taxExemptBase = taxBaseCurrent * (exemptGross / monthGross);
+                    taxExemptBase = Math.floor(taxExemptBase);
+                }
+            }
+
+            let effectiveTaxBase = Math.max(0, taxBaseCurrent - taxExemptBase);
+
+            // Progressive tax calculation using cumulative method
+            const prevCumulativeTaxBase = cumulativeTaxBase;
+            cumulativeTaxBase += effectiveTaxBase;
+
+            // Calculate cumulative tax due
+            let cumulativeTaxDue;
+            if (cumulativeTaxBase <= taxThreshold) {
+                cumulativeTaxDue = cumulativeTaxBase * rPIT1;
+            } else {
+                cumulativeTaxDue = taxThreshold * rPIT1 + (cumulativeTaxBase - taxThreshold) * rPIT2;
+            }
+
+            // Cumulative tax reduction
+            const cumulativeTaxReduction = monthlyTaxReduction * (m + 1);
+            cumulativeTaxDue -= cumulativeTaxReduction;
+            if (cumulativeTaxDue < 0) cumulativeTaxDue = 0;
+
+            // Monthly tax = cumulative due - already paid
+            let monthlyTax = Math.round(cumulativeTaxDue - cumulativeTaxPaid);
+            if (monthlyTax < 0) monthlyTax = 0;
+            cumulativeTaxPaid += monthlyTax;
+
+            // PPK employee contribution
+            const ppkEmployee = ppkEnabled ? Math.round(monthGross * ppkEmployeeRate * 100) / 100 : 0;
+
+            // Net salary (PPK employer doesn't decrease net — it's paid directly to fund)
+            const net = monthGross - totalZUS - zdrowotna - monthlyTax - ppkEmployee;
+
+            rows.push({
+                month: MONTHS[m],
+                monthShort: MONTHS_SHORT[m],
+                gross: monthGross,
+                bonus: bonuses[m],
+                ppkEmployer,
+                emerytalna,
+                rentowa,
+                chorobowa,
+                totalZUS,
+                healthBase,
+                zdrowotna,
+                kup,
+                taxBase: effectiveTaxBase,
+                tax: monthlyTax,
+                ppkEmployee,
+                net,
+            });
+        }
+
+        renderResults(rows, gross, ppkEnabled, ppkEmployeeRate, ppkEmployerRate, rEmerytalna, rRentowa, bonuses);
+    }
+
+    function renderResults(rows, gross, ppkEnabled, ppkEmployeeRate, ppkEmployerRate, rEmerytalna, rRentowa, bonuses) {
+        document.getElementById('results').style.display = 'block';
+
+        // Totals
+        const totals = rows.reduce((acc, r) => {
+            for (const key of ['gross', 'emerytalna', 'rentowa', 'chorobowa', 'totalZUS', 'zdrowotna', 'tax', 'ppkEmployee', 'net']) {
+                acc[key] = (acc[key] || 0) + r[key];
+            }
+            return acc;
+        }, {});
+
+        // Summary box
+        document.getElementById('sumGross').textContent = fmt(totals.gross) + ' zł';
+        document.getElementById('sumNet').textContent = fmt(totals.net) + ' zł';
+        document.getElementById('avgNet').textContent = fmt(totals.net / 12) + ' zł';
+        document.getElementById('effectiveRate').textContent =
+            (((totals.gross - totals.net) / totals.gross) * 100).toFixed(1) + '%';
+
+        // Chart
+        const maxNet = Math.max(...rows.map(r => r.net));
+        const minNet = Math.min(...rows.map(r => r.net));
+        const chartBase = minNet * 0.85;
+        const chartRange = maxNet - chartBase;
+
+        const chartEl = document.getElementById('monthChart');
+        chartEl.innerHTML = rows.map(r => {
+            const height = chartRange > 0
+                ? Math.max(5, ((r.net - chartBase) / chartRange) * 100)
+                : 80;
+            return `
+                <div class="bar-group">
+                    <div class="bar-value">${fmtInt(r.net)}</div>
+                    <div class="bar" style="height: ${height}%" title="${r.month}: ${fmt(r.net)} zł"></div>
+                    <div class="bar-label">${r.monthShort}</div>
+                </div>`;
+        }).join('');
+
+        // Table
+        const tbody = document.getElementById('resultsBody');
+        tbody.innerHTML = rows.map(r => `
+            <tr>
+                <td><strong>${r.month}</strong></td>
+                <td>${fmt(r.gross)}</td>
+                <td>${r.bonus > 0 ? fmt(r.bonus) : '—'}</td>
+                <td>${fmt(r.emerytalna)}</td>
+                <td>${fmt(r.rentowa)}</td>
+                <td>${fmt(r.chorobowa)}</td>
+                <td><strong>${fmt(r.totalZUS)}</strong></td>
+                <td>${fmt(r.healthBase)}</td>
+                <td>${fmt(r.zdrowotna)}</td>
+                <td>${fmt(r.kup)}</td>
+                <td>${fmt(r.taxBase)}</td>
+                <td>${fmt(r.tax)}</td>
+                <td>${fmt(r.ppkEmployee)}</td>
+                <td><strong>${fmt(r.net)}</strong></td>
+            </tr>
+        `).join('');
+
+        // Summary row
+        tbody.innerHTML += `
+            <tr class="row-summary">
+                <td>RAZEM</td>
+                <td>${fmt(totals.gross)}</td>
+                <td>${fmt(rows.reduce((s, r) => s + r.bonus, 0))}</td>
+                <td>${fmt(totals.emerytalna)}</td>
+                <td>${fmt(totals.rentowa)}</td>
+                <td>${fmt(totals.chorobowa)}</td>
+                <td>${fmt(totals.totalZUS)}</td>
+                <td>—</td>
+                <td>${fmt(totals.zdrowotna)}</td>
+                <td>—</td>
+                <td>—</td>
+                <td>${fmt(totals.tax)}</td>
+                <td>${fmt(totals.ppkEmployee)}</td>
+                <td>${fmt(totals.net)}</td>
+            </tr>`;
+
+        // Employer cost table
+        const rEmerytalnaPracodawca = 9.76;
+        const rRentowaPracodawca = 6.5;
+        const rWypadkowa = 1.67; // typical rate
+        const rFP = 2.45;
+        const rFGSP = 0.1;
+
+        const totalBonuses = bonuses.reduce((s, b) => s + b, 0);
+        const annualGross = gross * 12 + totalBonuses;
+        const employerItems = [
+            { name: 'Wynagrodzenie brutto', rate: '—', amount: annualGross },
+            { name: 'Składka emerytalna (pracodawca)', rate: rEmerytalnaPracodawca + '%', amount: annualGross * rEmerytalnaPracodawca / 100 },
+            { name: 'Składka rentowa (pracodawca)', rate: rRentowaPracodawca + '%', amount: annualGross * rRentowaPracodawca / 100 },
+            { name: 'Składka wypadkowa', rate: rWypadkowa + '%', amount: annualGross * rWypadkowa / 100 },
+            { name: 'Fundusz Pracy', rate: rFP + '%', amount: annualGross * rFP / 100 },
+            { name: 'FGŚP', rate: rFGSP + '%', amount: annualGross * rFGSP / 100 },
+        ];
+
+        if (ppkEnabled) {
+            employerItems.push({
+                name: 'PPK (pracodawca)',
+                rate: (ppkEmployerRate * 100).toFixed(1) + '%',
+                amount: annualGross * ppkEmployerRate,
+            });
+        }
+
+        const totalEmployerCost = employerItems.reduce((s, i) => s + i.amount, 0);
+        employerItems.push({ name: 'RAZEM koszt pracodawcy', rate: '', amount: totalEmployerCost });
+
+        const employerBody = document.getElementById('employerBody');
+        employerBody.innerHTML = employerItems.map((item, i) => {
+            const isLast = i === employerItems.length - 1;
+            return `
+                <tr ${isLast ? 'class="row-summary"' : ''}>
+                    <td>${item.name}</td>
+                    <td>${item.rate}</td>
+                    <td>${fmt(item.amount)} zł</td>
+                </tr>`;
+        }).join('');
+
+        // Scroll to results only when user explicitly clicks the button
+        if (shouldScroll) {
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            shouldScroll = false;
+        }
+    }
+
+    // Initial calculation
+    calculate();
+    </script>
+</body>
+</html>
